@@ -1,0 +1,7 @@
+include *.txt
+include *.md
+include *.rst
+include *ubyte
+include mypkg/*.conf
+include mypkg/*.rst
+include mypkg/*.db
