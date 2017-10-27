@@ -17,7 +17,8 @@ def run(step_size=1e-3,
         batch_size=10,
         noise_SD=20,
         iterations=10,
-        graphics_path=None):
+        graphics_path=None,
+        cuda=False):
     low_res_embedder = TripleMNISTLowResEmbedder()
     attention_box = TripleMNISTAttentionBox()
     core_proposal_layer = TripleMNISTCoreAndProposalLayer()
@@ -25,11 +26,14 @@ def run(step_size=1e-3,
     net = FullNet(attention_box=attention_box,
                   low_res_embedder=low_res_embedder,
                   core_proposal_layer=core_proposal_layer)
+    if cuda:
+        net.cuda()
     optimizer = optim.Adam(net.parameters(), lr=step_size)
     lossCriterion = nn.NLLLoss()
     dataGenerator = TripleMNISTImagesGenerator(batch_size=batch_size,
                                                noise_SD=noise_SD,
-                                               single_target=True)
+                                               single_target=True,
+                                               cuda=cuda)
     lossTracker = trackStat("Loss")
 
     validation_batch = next(dataGenerator)
@@ -39,6 +43,8 @@ def run(step_size=1e-3,
         optimizer.zero_grad()
 
         images, targets = next(dataGenerator)
+        if cuda:
+            targets = targets.cuda()
 
         proposed = net(images)
 

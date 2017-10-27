@@ -7,9 +7,11 @@ from modified_mnist.three_mnist import ThreeMNIST
 
 
 class TripleMNISTImages(Images):
-    def __init__(self, image_tensor):
+    def __init__(self, image_tensor, cuda=False):
         """ takes in n_images x 140 x 28 Tensor
         """
+        self.cuda = cuda
+
         self.n_images = len(image_tensor)
 
         self.full_images = image_tensor
@@ -21,7 +23,10 @@ class TripleMNISTImages(Images):
             .view(self.n_images, 3, 15)
 
     def lowResView(self):
-        return self.low_res
+        if self.cuda:
+            return self.low_res.cuda()
+        else:
+            return self.low_res
 
     def focusView(self, locations, loc_type="discrete"):
         """ if loc_type is "discrete", location is integer 0 ... 14
@@ -38,10 +43,16 @@ class TripleMNISTImages(Images):
             locations[img_no] = self.full_images[img_no,
                                                  :,
                                                  8*location:8*location+28]
-        return focusedViews
+        if self.cuda:
+            return focusedViews.cuda()
+        else:
+            return focusedViews
 
     def fullView(self):
-        return self.full_images
+        if self.cuda:
+            return self.full_images.cuda()
+        else:
+            return self.full_images
 
     def nImages(self):
         return self.n_images
@@ -49,11 +60,12 @@ class TripleMNISTImages(Images):
 
 def TripleMNISTImagesGenerator(batch_size=1,
                                noise_SD=0,
-                               single_target=False):
+                               single_target=False,
+                               cuda=False):
     """ yields tuples of images and targets """
     generator = ThreeMNIST(single_target=single_target)
     while True:
         images, targets = generator.generate(n_images=batch_size,
                                              noise_SD=noise_SD)
-        images = TripleMNISTImages(images)
+        images = TripleMNISTImages(images, cuda=cuda)
         yield images, targets
