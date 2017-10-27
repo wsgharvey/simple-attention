@@ -43,8 +43,6 @@ def run(step_size=1e-3,
         optimizer.zero_grad()
 
         images, targets = next(dataGenerator)
-        if cuda:
-            targets = targets.cuda()
 
         proposed = net(images)
 

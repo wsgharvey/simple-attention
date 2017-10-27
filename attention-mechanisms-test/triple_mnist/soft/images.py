@@ -68,4 +68,6 @@ def TripleMNISTImagesGenerator(batch_size=1,
         images, targets = generator.generate(n_images=batch_size,
                                              noise_SD=noise_SD)
         images = TripleMNISTImages(images, cuda=cuda)
+        if cuda:
+            targets = targets.cuda()
         yield images, targets
