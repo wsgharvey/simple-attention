@@ -55,9 +55,7 @@ class TripleMNISTAttentionBox(AttentionBox):
         low_res_view = images.lowResView()
         attention_weights = self.attention_weights_layer(low_res_view)
 
-        self.most_recent_attention_weights = attention_weights
-
-        focus_embedding = Variable(torch.zeros(images.nImages(), 20))
+        self.most_recent_attention_weights = attention_weights 
 
         # add a weighted embedding of each view to the full embedding
         for location in range(15):
@@ -66,10 +64,12 @@ class TripleMNISTAttentionBox(AttentionBox):
             local_focus_embeddings = self.focus_embedder(high_res_images)
 
             local_attention_weights = attention_weights[:, location]
+            if location == 0:
+                focus_embedding = local_focus_embeddings * 0
             for img_no in range(images.nImages()):  # TODO: check this
                 focus_embedding[img_no] = focus_embedding[img_no]\
-                                            + local_focus_embeddings[img_no]\
-                                            * local_attention_weights[img_no]
+                                                + local_focus_embeddings[img_no]\
+                                                * local_attention_weights[img_no]
         return focus_embedding
 
     def getAttentionSummary(self):

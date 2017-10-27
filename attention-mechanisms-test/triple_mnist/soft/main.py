@@ -48,6 +48,7 @@ def run(step_size=1e-3,
 
         loss = lossCriterion(proposed, targets)
         loss.backward()
+        print(loss)
 
         optimizer.step()
 
