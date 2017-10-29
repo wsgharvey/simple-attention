@@ -45,9 +45,14 @@ class TripleMNISTCoreAndProposalLayer(CoreAndProposalLayer):
 
 
 class TripleMNISTSoftAttentionBox(AttentionBox):
-    def __init__(self, type="fcn"):
+    def __init__(self, weight_layer_type="fcn"):
         super(TripleMNISTSoftAttentionBox, self).__init__()
-        self.attention_weights_layer = TripleMNISTAttentionWeightsLayer()
+        if weight_layer_type == "fcn":
+            self.attention_weights_layer = TripleMNISTAttentionWeightsLayer()
+        elif weight_layer_type == "conv":
+            self.attention_weights_layer = TripleMNISTConvAttentionWeightsLayer()
+        else:
+            raise Exception("{} not a valid type".format(weight_layer_type))
         self.focus_embedder = TripleMNISTFocusEmbedder()
         self.prev_attention_weights = None
         self.n_locations = 13
@@ -56,7 +61,7 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
         low_res_view = images.lowResView()
         attention_weights = self.attention_weights_layer(low_res_view)
 
-        self.most_recent_attention_weights = attention_weights 
+        self.most_recent_attention_weights = attention_weights
 
         # add a weighted embedding of each view to the full embedding
         for location in range(self.n_locations):
@@ -103,22 +108,22 @@ class TripleMNISTAttentionWeightsLayer(nn.Module):
 
 class TripleMNISTConvAttentionWeightsLayer(nn.Module):
     def __init__(self):
-        super(TripleMNISTAttentionWeightsLayer, self).__init__()
+        super(TripleMNISTConvAttentionWeightsLayer, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, 3, padding=1)
-        self.conv2 = nn.Conv2d(10, 20, 3, padding=0)
-        self.conv3 = nn.Conv1d(20, 20, 3)
+        self.conv2 = nn.Conv2d(10, 10, 3, padding=0)
+        self.conv3 = nn.Conv1d(10, 1, 5, padding=2)
         self.softmax = nn.Softmax()
 
     def forward(self, x):
         x = x.view(-1, 1, 3, 15)
         x = F.relu(self.conv1(x))
-        x = x.view(-1, 20, 13)
         x = F.relu(self.conv2(x))
-        x = x.view(-1, 100)
-        x = F.relu(self.fcn1(x))
-        x = F.relu(self.fcn2(x))
+        x = x.view(-1, 10, 13)
+        x = F.relu(self.conv3(x))
+        x = x.view(-1, 13)
         weights = self.softmax(x)
         self.previous_weights = weights
+        print("weights:", weights)
         return weights
 
 

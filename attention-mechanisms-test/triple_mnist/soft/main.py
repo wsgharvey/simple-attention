@@ -13,7 +13,7 @@ from ..base import FullNet
 from .analyse import analysePredictions, trackStat
 
 
-def run(conv_attention,
+def run(attention_layer_type="fcn",
         step_size=1e-3,
         batch_size=10,
         noise_SD=20,
@@ -21,7 +21,7 @@ def run(conv_attention,
         graphics_path=None,
         cuda=False):
     low_res_embedder = TripleMNISTLowResEmbedder()
-    attention_box = TripleMNISTSoftAttentionBox()
+    attention_box = TripleMNISTSoftAttentionBox(attention_layer_type)
     core_proposal_layer = TripleMNISTCoreAndProposalLayer()
 
     net = FullNet(attention_box=attention_box,
