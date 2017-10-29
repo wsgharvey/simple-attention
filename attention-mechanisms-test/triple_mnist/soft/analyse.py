@@ -22,13 +22,15 @@ def analysePredictions(net, validation_batch, n_data=np.inf):
     try:
         proposals = net(images).data.numpy()
         attention_weights_list = net.getAttentionSummary().data.numpy()
+        full_images = images.fullView().data.numpy()
+        low_res_images = images.lowResView().data.numpy()
     except RuntimeError:
         proposals = net(images).data.cpu().numpy()
         attention_weights_list = net.getAttentionSummary().data.cpu().numpy()
-    n_locations = len(attention_weights_list[0])
+        full_images = images.fullView().cpu().data.numpy()
+        low_res_images = images.lowResView().cpu().data.numpy()
 
-    full_images = images.fullView().data.numpy()
-    low_res_images = images.lowResView().data.numpy()
+    n_locations = len(attention_weights_list[0])
 
     canvas = PIL.Image.new('L', (end,
                                  min(n_data, len(proposals) * line_width)),
