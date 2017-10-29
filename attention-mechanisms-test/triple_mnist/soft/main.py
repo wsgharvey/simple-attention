@@ -7,20 +7,21 @@ from torch.autograd import Variable
 
 from .images import TripleMNISTImagesGenerator
 from .nn import TripleMNISTLowResEmbedder,\
-               TripleMNISTAttentionBox,\
+               TripleMNISTSoftAttentionBox,\
                TripleMNISTCoreAndProposalLayer
 from ..base import FullNet
 from .analyse import analysePredictions, trackStat
 
 
-def run(step_size=1e-3,
+def run(conv_attention,
+        step_size=1e-3,
         batch_size=10,
         noise_SD=20,
         iterations=10,
         graphics_path=None,
         cuda=False):
     low_res_embedder = TripleMNISTLowResEmbedder()
-    attention_box = TripleMNISTAttentionBox()
+    attention_box = TripleMNISTSoftAttentionBox()
     core_proposal_layer = TripleMNISTCoreAndProposalLayer()
 
     net = FullNet(attention_box=attention_box,
@@ -33,7 +34,8 @@ def run(step_size=1e-3,
     dataGenerator = TripleMNISTImagesGenerator(batch_size=batch_size,
                                                noise_SD=noise_SD,
                                                single_target=True,
-                                               cuda=cuda)
+                                               cuda=cuda,
+                                               n_locations=13)
     lossTracker = trackStat("Loss")
 
     validation_batch = next(dataGenerator)

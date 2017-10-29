@@ -21,6 +21,7 @@ def analysePredictions(net, validation_batch, n_data=np.inf):
     images, targets = validation_batch
     proposals = net(images).data.numpy()
     attention_weights_list = net.getAttentionSummary().data.numpy()
+    n_locations = len(attention_weights_list[0])
 
     full_images = images.fullView().data.numpy()
     low_res_images = images.lowResView().data.numpy()
@@ -50,8 +51,11 @@ def analysePredictions(net, validation_batch, n_data=np.inf):
 
         # Create graphic to show attention weights
         graphic = np.zeros((28, 140))
-        for region in range(0, 15):
-            start = region*8
+        locations = [int(l) for l in np.arange(0,
+                                               140,
+                                               (140-28)/(n_locations-1))]
+        for region in range(0, n_locations):
+            start = locations[region]
             end = start + 28
             weight = attention_weights[region]
             graphic[:, start:end] +=\
