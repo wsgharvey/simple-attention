@@ -50,7 +50,6 @@ def run(attention_layer_type="fcn",
 
         loss = lossCriterion(proposed, targets)
         loss.backward()
-        print(loss)
 
         optimizer.step()
 
