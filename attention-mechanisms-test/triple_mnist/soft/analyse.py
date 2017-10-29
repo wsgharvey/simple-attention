@@ -21,9 +21,10 @@ def analysePredictions(net, validation_batch, n_data=np.inf):
     images, targets = validation_batch
     try:
         proposals = net(images).data.numpy()
+        attention_weights_list = net.getAttentionSummary().data.numpy()
     except RuntimeError:
         proposals = net(images).data.cpu().numpy()
-    attention_weights_list = net.getAttentionSummary().data.numpy()
+        attention_weights_list = net.getAttentionSummary().data.cpu().numpy()
     n_locations = len(attention_weights_list[0])
 
     full_images = images.fullView().data.numpy()
