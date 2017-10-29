@@ -123,7 +123,6 @@ class TripleMNISTConvAttentionWeightsLayer(nn.Module):
         x = x.view(-1, 13)
         weights = self.softmax(x)
         self.previous_weights = weights
-        print("weights:", weights)
         return weights
 
 
