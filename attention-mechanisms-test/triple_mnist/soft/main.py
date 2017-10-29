@@ -50,6 +50,7 @@ def run(conv_attention,
 
         loss = lossCriterion(proposed, targets)
         loss.backward()
+        print(loss)
 
         optimizer.step()
 
