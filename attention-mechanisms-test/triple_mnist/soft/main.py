@@ -52,10 +52,10 @@ def run(attention_layer_type="fcn",
         loss.backward()
 
         optimizer.step()
-
+        
         lossTracker.add(loss, i)
 
-        print("Loss is {}\n".format(loss.data[0]))
+        print("{} iterations: Loss is {}\n".format(i, loss.data[0]))
 
         if i in map(lambda x: int(iterations*x),
                     [0.1, 0.2, 0.4, 0.6, 0.8, 1]):

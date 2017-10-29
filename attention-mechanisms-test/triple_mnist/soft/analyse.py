@@ -100,7 +100,7 @@ class trackStat(object):
 
         if isinstance(stat, Variable):
             stat = stat.data
-        if isinstance(stat, torch.Tensor):
+        if isinstance(stat, (torch.Tensor, torch.cuda.FloatTensor)):
             stat = stat.view(1)[0]
         assert isinstance(stat, Number)
 
