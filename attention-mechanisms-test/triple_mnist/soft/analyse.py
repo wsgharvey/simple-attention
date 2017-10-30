@@ -34,7 +34,7 @@ def analysePredictions(net, validation_batch, n_data=np.inf):
     while datum < n_data:
         try:
             proposal = proposals[datum]
-            attention_weights = attention_weights_list[0]
+            attention_weights = attention_weights_list[datum]
             full_image = PIL.Image.fromarray(full_images[datum])
 
             # expand low res. to sam size as full res.

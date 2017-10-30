@@ -19,9 +19,10 @@ def run(attention_layer_type="fcn",
         noise_SD=20,
         iterations=10,
         graphics_path=None,
-        cuda=False):
+        cuda=False, attention_type="soft"):
     low_res_embedder = TripleMNISTLowResEmbedder()
-    attention_box = TripleMNISTSoftAttentionBox(attention_layer_type)
+    attention_box = TripleMNISTSoftAttentionBox(attention_layer_type,
+                                                attention_type=attention_type)
     core_proposal_layer = TripleMNISTCoreAndProposalLayer()
 
     net = FullNet(attention_box=attention_box,
