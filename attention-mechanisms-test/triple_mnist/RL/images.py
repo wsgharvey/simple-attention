@@ -40,23 +40,17 @@ class TripleMNISTImages(Images):
         """
         assert len(desired_locations) == self.n_images
 
-        if loc_type == "discrete":
-            for loc in desired_locations:
-                assert loc in range(self.n_locations)
-            location_coords = [self.discrete_locations[loc] for loc in desired_locations]
-        elif loc_type == "continuous":
-            for loc in desired_locations:
-                assert 0 <= loc <= 1
-            location_coords = [int(loc*(140-28)) for loc in desired_locations]
+        for loc in desired_locations:
+            assert loc in range(self.n_locations)
 
         focusedViews = Variable(torch.zeros(self.n_images, 28, 28))
 
         for img_no in range(self.n_images):
             location = desired_locations[img_no]
-            loc_x = location_coords[img_no]
-            focusedViews[img_no] = self.full_images[img_no,
-                                                    :,
-                                                    loc_x:loc_x+28]
+            loc_x = self.discrete_locations[location]
+            desired_locations[img_no] = self.full_images[img_no,
+                                                         :,
+                                                         loc_x:loc_x+28]
         if self.cuda:
             return focusedViews.cuda()
         else:
@@ -76,28 +70,13 @@ def TripleMNISTImagesGenerator(batch_size=1,
                                noise_SD=0,
                                single_target=False,
                                cuda=False,
-                               n_locations=15,
-                               give_locations=False):
+                               n_locations=15):
     """ yields tuples of images and targets """
-    generator = ThreeMNIST(single_target=single_target,
-                           give_locations=True)
+    generator = ThreeMNIST(single_target=single_target)
     while True:
-        images, targets, digit_starts = generator.generate(n_images=batch_size,
-                                                           noise_SD=noise_SD)
+        images, targets = generator.generate(n_images=batch_size,
+                                             noise_SD=noise_SD)
         images = TripleMNISTImages(images, cuda=cuda, n_locations=n_locations)
         if cuda:
             targets = targets.cuda()
-        if give_locations:
-            yield images, targets, digit_starts
-        else:
-            yield images, targets
-
-
-def give_ideal_locations(true_starts, n_locations):
-    mnist_width = 28
-    total_width = 28 * 5
-
-    spacing = (total_width - mnist_width) / n_locations
-
-    ideal = [int(x/spacing) for x in true_starts.data]
-    return Variable(torch.from_numpy(np.array(ideal)))
+        yield images, targets

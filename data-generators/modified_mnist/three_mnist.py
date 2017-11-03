@@ -13,9 +13,11 @@ class ThreeMNIST(object):
         consecutive MNIST digits
     """
     def __init__(self,
-                 single_target=False):
+                 single_target=False,
+                 give_locations=False):
         self.drawer = DigitWriter()
         self.single_target = single_target
+        self.give_locations = give_locations
 
     def generate(self,
                  n_images=1,
@@ -37,10 +39,12 @@ class ThreeMNIST(object):
         full_digits = Variable(torch.zeros(n_images,
                                            n_digits).type(torch.LongTensor))
 
+        locations = []
         for image_no in range(n_images):
             digits = np.random.randint(10, size=(3))
             digits_start = np.random.randint((digits_wide-n_digits)
                                              * mnist_width)
+            locations.append(digits_start)
             full_digits[image_no] = torch.from_numpy(digits)
 
             for index, digit in enumerate(digits):
@@ -54,13 +58,22 @@ class ThreeMNIST(object):
             full_images = F.relu(full_images)
 
         if self.single_target:
-            return full_images, full_digits[:, 0]
+            digit_info = full_digits[:, 0]
         else:
-            return full_images, full_digits
+            digit_info = full_digits
+
+        if self.give_locations:
+            locations = Variable(torch.Tensor(locations)).type('torch.FloatTensor')
+            return full_images, digit_info, locations
+        else:
+            return full_images, digit_info
+
 
 
 if __name__ == '__main__':
     from PIL import Image
-    quadrant_mnist = QuadrantNIST()
-    img = Image.fromarray(quadrant_mnist.generate(noise_SD=2).data.numpy()[0])
-    img.show()
+    gen = ThreeMNIST()
+    for i in range(10):
+        img = Image.fromarray(gen.generate(noise_SD=2)[0].data.numpy()[0], mode='F')
+        img = img.convert('RGB')
+        img.save("/home/will/junk/img_{}.png".format(i))

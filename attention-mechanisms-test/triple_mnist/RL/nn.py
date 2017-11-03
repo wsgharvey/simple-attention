@@ -63,15 +63,11 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
         attention_weights = self.attention_weights_layer(low_res_view)
 
         self.most_recent_attention_weights = attention_weights
-        # _, best_locations = torch.max(attention_weights, 1)
-        # best_locations = list(best_locations.data.numpy())
-        # self.most_recent_best_images = images.focusView(best_locations)
 
         if self.attention_type == "soft":
             # add a weighted embedding of each view to the full embedding
             for location in range(self.n_locations):
-                high_res_images = images.focusView([location]*images.nImages(),
-                                                   loc_type == "discrete")
+                high_res_images = images.focusView([location]*images.nImages())
                 high_res_images = high_res_images.view(-1, 1, 28, 28)
                 local_focus_embeddings = self.focus_embedder(high_res_images)
 
@@ -81,7 +77,7 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
                 for img_no in range(images.nImages()):  # TODO: check this
                     focus_embedding[img_no] = focus_embedding[img_no]\
                                                     + local_focus_embeddings[img_no]\
-                                                    * local_attention_weights[img_no]  # fuck it up a bit to see what happens
+                                                    * local_attention_weights[img_no]
         elif self.attention_type == "hard":
             n_samples = 5
 
@@ -89,10 +85,10 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
             #   (get the samples * 1/q)
             np_attention_weights = attention_weights.data.numpy()
             try:
-                attention_choices = [np.random.multinomial(n_samples, img_probs/(sum(img_probs)+1e-4))/n_samples for img_probs in np_attention_weights]
+                attention_choices = [np.random.multinomial(n_samples, img_probs/sum(img_probs))/n_samples for img_probs in np_attention_weights]
             except:
                 for img_probs in np_attention_weights:
-                    print(img_probs/sum(img_probs), sum(img_probs))
+                    print(img_probs, sum(img_probs))
                 raise Exception
             attention_choices = np.divide(attention_choices, np_attention_weights)
             attention_choices = Variable(torch.from_numpy(np.array(attention_choices))).type(torch.FloatTensor)
@@ -101,8 +97,7 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
             # restore to original samples with weight of 1 (but variable)
             attention_choices = torch.mul(attention_choices, attention_weights)
             for location in range(self.n_locations):
-                high_res_images = images.focusView([location]*images.nImages(),
-                                                   loc_type="discrete")
+                high_res_images = images.focusView([location]*images.nImages())
                 high_res_images = high_res_images.view(-1, 1, 28, 28)
                 local_focus_embeddings = self.focus_embedder(high_res_images)
 
@@ -124,7 +119,7 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
         return self.most_recent_attention_weights
 
 
-class TripleMNISTAttentionWeightsLayer(nn.Module):
+class TripleMNISTAttentionPolicy(nn.Module):
     def __init__(self):
         super(TripleMNISTAttentionWeightsLayer, self).__init__()
         self.conv1 = nn.Conv2d(1, 20, 3)
@@ -146,24 +141,24 @@ class TripleMNISTAttentionWeightsLayer(nn.Module):
         return weights
 
 
-class TripleMNISTConvAttentionWeightsLayer(nn.Module):
-    def __init__(self):
-        super(TripleMNISTConvAttentionWeightsLayer, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, 3, padding=1)
-        self.conv2 = nn.Conv2d(10, 10, 3, padding=0)
-        self.conv3 = nn.Conv1d(10, 1, 5, padding=2)
-        self.softmax = nn.Softmax()
-
-    def forward(self, x):
-        x = x.view(-1, 1, 3, 15)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = x.view(-1, 10, 13)
-        x = F.relu(self.conv3(x))
-        x = x.view(-1, 13)
-        weights = self.softmax(x)
-        self.previous_weights = weights
-        return weights
+# class TripleMNISTConvAttentionWeightsLayer(nn.Module):
+#     def __init__(self):
+#         super(TripleMNISTConvAttentionWeightsLayer, self).__init__()
+#         self.conv1 = nn.Conv2d(1, 10, 3, padding=1)
+#         self.conv2 = nn.Conv2d(10, 10, 3, padding=0)
+#         self.conv3 = nn.Conv1d(10, 1, 5, padding=2)
+#         self.softmax = nn.Softmax()
+#
+#     def forward(self, x):
+#         x = x.view(-1, 1, 3, 15)
+#         x = F.relu(self.conv1(x))
+#         x = F.relu(self.conv2(x))
+#         x = x.view(-1, 10, 13)
+#         x = F.relu(self.conv3(x))
+#         x = x.view(-1, 13)
+#         weights = self.softmax(x)
+#         self.previous_weights = weights
+#         return weights
 
 
 class TripleMNISTFocusEmbedder(nn.Module):

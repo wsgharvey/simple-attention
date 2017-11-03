@@ -18,7 +18,7 @@ def analysePredictions(net, validation_batch, n_data=np.inf):
     predictions_x = 420
     end = 520
 
-    images, targets, _ = validation_batch
+    images, targets = validation_batch
     try:
         proposals = net(images).data.numpy()
         attention_weights_list = net.getAttentionSummary().data.numpy()
