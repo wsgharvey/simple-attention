@@ -50,7 +50,7 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
         if weight_layer_type == "fcn":
             self.attention_weights_layer = TripleMNISTAttentionWeightsLayer()
         elif weight_layer_type == "conv":
-            self.attention_weights_layer = TripleMNISTConvAttentionWeightsLayer()
+            self.attention_weights_layer = TripleMNISTConvDiscreteAttentionWeightsLayer()
         else:
             raise Exception("{} not a valid type".format(weight_layer_type))
         self.focus_embedder = TripleMNISTFocusEmbedder()
@@ -94,7 +94,16 @@ class TripleMNISTSoftAttentionBox(AttentionBox):
                 for img_probs in np_attention_weights:
                     print(img_probs/sum(img_probs), sum(img_probs))
                 raise Exception
-            attention_choices = np.divide(attention_choices, np_attention_weights)
+            divided_choices = []
+            for choices, weights in zip(attention_choices, np_attention_weights):
+                divided_choice = []
+                for choice, weight in zip(choices, weights):
+                    if choice == 0:
+                        divided_choice.append(choice)
+                    else:
+                        divided_choice.append(choice/weight)
+                divided_choices.append(divided_choice)
+            attention_choices = np.array(divided_choices)
             attention_choices = Variable(torch.from_numpy(np.array(attention_choices))).type(torch.FloatTensor)
 
             # we've done our job and can let autograd watch us again
@@ -146,9 +155,11 @@ class TripleMNISTAttentionWeightsLayer(nn.Module):
         return weights
 
 
-class TripleMNISTConvAttentionWeightsLayer(nn.Module):
+class TripleMNISTConvDiscreteAttentionWeightsLayer(nn.Module):
+    """ returns coordinate in range 0 - 1
+    """
     def __init__(self):
-        super(TripleMNISTConvAttentionWeightsLayer, self).__init__()
+        super(TripleMNISTConvDiscreteAttentionWeightsLayer, self).__init__()
         self.conv1 = nn.Conv2d(1, 10, 3, padding=1)
         self.conv2 = nn.Conv2d(10, 10, 3, padding=0)
         self.conv3 = nn.Conv1d(10, 1, 5, padding=2)
@@ -164,6 +175,33 @@ class TripleMNISTConvAttentionWeightsLayer(nn.Module):
         weights = self.softmax(x)
         self.previous_weights = weights
         return weights
+
+
+class TripleMNISTConvContinuousAttentionWeightsLayer(nn.Module):
+    """ returns categorical distribution over 13 views
+    """
+    def __init__(self):
+        super(TripleMNISTConvContinuousAttentionWeightsLayer, self).__init__()
+        self.conv1 = nn.Conv2d(1, 10, 3, padding=1)
+        self.conv2 = nn.Conv2d(10, 10, 3, padding=0)
+        self.conv3 = nn.Conv1d(10, 1, 5, padding=2)
+        self.softmax = nn.Softmax()
+
+    def forward(self, x):
+        x = x.view(-1, 1, 3, 15)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = x.view(-1, 10, 13)
+        x = F.relu(self.conv3(x))
+        x = x.view(-1, 13)
+        weights = self.softmax(x)
+
+        # transform discrete weights into coordinate in range 0 - 1
+        transformer = Variable(torch.Tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]))
+        coord = torch.dot(weights, transformer)
+
+        self.previous_weights = coord
+        return coord
 
 
 class TripleMNISTFocusEmbedder(nn.Module):
